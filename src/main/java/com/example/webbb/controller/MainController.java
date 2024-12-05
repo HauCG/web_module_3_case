@@ -1,5 +1,7 @@
 package com.example.webbb.controller;
 
+import com.example.webbb.dao.AccountDaoImpl;
+
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -26,10 +28,10 @@ public class MainController extends HttpServlet {
         int accountId;
         // kiểm tra xem có nhập ko vì int ko trả về null
         if (request.getParameter("C") != null) {
-             accountId = Integer.parseInt(request.getParameter("C"));  // C là code đại diện cho accountId
+             accountId = Integer.parseInt(request.getParameter("C"));
         } else {
              accountId = -1;
-        }
+        }// C là code đại diện cho accountId -- (sử lý nếu account id != rỗng hoặc = -1 nếu nó là null
 
         if (status == null) {
             status = "KO";
@@ -50,11 +52,24 @@ public class MainController extends HttpServlet {
             case "OK":
                 // trạng thaiais đnăg nhập ok mà ko có id thì trả sang trang lỗi
                 // todo:  kiểm tra đúng idcus và đúng identity ko thì ở jsp hay controlerr luôn(ngày mai)
-                if (accountId != -1) {
+                String usernameCheck = request.getParameter("username");
+                String passwordCheck = request.getParameter("password");
+                String identityCheck = request.getParameter("identity");
+                AccountDaoImpl accountDao = new AccountDaoImpl();
+                int AccId = accountDao.checkRightCredentials(usernameCheck, passwordCheck, identityCheck);
+                // id sau khi check đúng trả về AccId
+
+                if (AccId != -1 && accountId != -1) {
                     switch (action) {
                         case "homePage":
-                            showHomePage(request, response, identity);
+                            showHomePage(request, response, identity, AccId);
                             break;
+                        case "loginPage":
+                            showLoginPage(request, response);
+                            break;
+
+//                        case "registerPage":
+
                         case "other":
                             // TODO thêm các chức năng khác
                             break;
@@ -70,21 +85,25 @@ public class MainController extends HttpServlet {
                 break;
         }
     }
+
     // C LÀ KHÁCH HÀNG, S LÀ NGƯỜI BÁN, A LÀ CHỦ SÀN
 
-
-    private void showHomePage(HttpServletRequest request, HttpServletResponse response, String identity) throws IOException, ServletException {
-//        truyền vào để kiểm tra xong xử lý ở jsp
+    private void showHomePage(HttpServletRequest request, HttpServletResponse response, String identity, int AccId) throws IOException, ServletException {
+        request.setAttribute("accId", AccId);
         request.setAttribute("identity", identity);
         RequestDispatcher dispatcher = request.getRequestDispatcher("/homePage.jsp");
         dispatcher.forward(request, response);
     }
-
+    private void showLoginPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/showLoginPage.jsp");
+        dispatcher.forward(request, response);
+    }
     private void showWelcomePage(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         RequestDispatcher dispatcher = request.getRequestDispatcher("/welcomeView/welcomePage.jsp");
         dispatcher.forward(request, response);
     }
-    private void showPageNotFound(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.sendRedirect("/WEB-INF/pageNotFound.jsp");
+    private void showPageNotFound(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+            RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/pageNotFound.jsp");
+            dispatcher.forward(request, response);
     }
 }
